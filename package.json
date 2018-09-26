@@ -1,0 +1,69 @@
+{
+  "name": "mongo-migrations",
+  "version": "1.0.1",
+  "description": "Asynchronous MongoDB migration framework for Node.js based on node-migrate",
+  "keywords": [
+    "migrate",
+    "migrations",
+    "mongo",
+    "mongodb",
+    "droplr"
+  ],
+  "author": "Droplr, Inc.",
+  "license": "MIT",
+  "contributors": [
+    "Przemyslaw Krolik <necromos@necroworks.net> (https://github.com/necromos)"
+  ],
+  "bugs": {
+    "url": "https://github.com/Droplr/mong-migrations/issues"
+  },
+  "homepage": "https://droplr.com",
+  "repository": "git://github.com/Droplr/mongo-migrations",
+  "bin": {
+    "mongo-migrations": "./bin/migrate",
+    "mongo-migrations-init": "./bin/migrate-init",
+    "mongo-migrations-list": "./bin/migrate-list",
+    "mongo-migrations-create": "./bin/migrate-create",
+    "mongo-migrations-up": "./bin/migrate-up",
+    "mongo-migrations-down": "./bin/migrate-down"
+  },
+  "main": "index.js",
+  "engines": {
+    "node": ">= 8.2.1"
+  },
+  "scripts": {
+    "test": "jest --runInBand",
+    "test:ci": "jest --coverage --runInBand",
+    "test:watch": "jest --runInBand --watch",
+    "test:coverage": "jest --coverage --runInBand"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.2",
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "dateformat": "^2.0.0",
+    "dotenv": "^4.0.0",
+    "minimatch": "^3.0.3",
+    "mkdirp": "^0.5.1",
+    "mongodb": "3.1.6",
+    "slug": "^0.9.1",
+    "winston": "^2.3.1"
+  },
+  "devDependencies": {
+    "jest": "^23.6.0",
+    "rimraf": "^2.6.1"
+  },
+  "jest": {
+    "coverageDirectory": "./coverage/",
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/node_modules"
+    ],
+    "coverageReporters": [
+      "lcov"
+    ],
+    "collectCoverageFrom": [
+      "lib/**/*.{js}"
+    ],
+    "testRegex": ".*\\.spec\\.js$"
+  }
+}

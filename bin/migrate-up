@@ -1,0 +1,95 @@
+#!/usr/bin/env node
+"use strict";
+
+const program = require('commander');
+const path = require('path');
+const minimatch = require('minimatch');
+const dotenv = require('dotenv');
+const migrate = require('..');
+const log = require('../lib/loggers/log');
+const registerCompiler = require('../lib/register-compiler');
+const pkg = require('../package.json');
+const configLoader = require('../lib/loaders/ConfigLoader');
+
+program
+  .version(pkg.version)
+  .usage('[options] <name>')
+  .option('-c, --chdir <dir>', 'Change the working directory', process.cwd())
+  .option('-f, --state-file <path>', 'Set path to state file')
+  .option('-s, --store <store>', 'Set the migrations store')
+  .option('--clean', 'Tears down the migration state before running up')
+  .option('-F, --force', 'Force through the command, ignoring warnings')
+  .option('--init', 'Runs init for the store')
+  .option('--migrations-dir <dir>', 'Change the migrations directory name')
+  .option('--matches <glob>', 'A glob pattern to filter migration files', '*')
+  .option('--compiler <ext:module>', 'Use the given module to compile files')
+  .option('--env [name]', 'Use dotenv to load an environment file')
+  .option('-D, --dry-run', 'Dry run commands without making any changes in DB')
+  .option('--config <name>', 'Name of config file', 'migrate-config.json')
+  .parse(process.argv);
+
+(async () => {
+  try {
+    process.chdir(program.chdir);
+
+    if (program.env) {
+      const e = dotenv.config({
+        path: typeof program.env === 'string' ? program.env : '.env',
+      });
+      if (e && e.error instanceof Error) throw e.error;
+    }
+
+    if (program.clean && process.env.NODE_ENV === 'production' && !program.force) {
+      log.error('error', 'Cowardly refusing to clean while node environment set to production, use --force to continue.');
+      process.exit(1);
+    }
+
+    if (program.init && process.env.NODE_ENV === 'production' && !program.force) {
+      log.error('error', 'Cowardly refusing to init while node environment set to production, use --force to continue.');
+      process.exit(1);
+    }
+
+    const CONFIG = await configLoader.load(program.config);
+
+    const COMPILER = program.compiler || CONFIG.compiler;
+    const DRY_RUN = CONFIG.dryRun || program.dryRun;
+    const MIGRATIONS_DIRECTORY = program.migrationsDir || CONFIG.migrationsDirectory;
+    const STATE_FILE = program.stateFile || CONFIG.stateFile;
+    const STORE_CLASS_PATH = program.store || CONFIG.storeClassPath;
+    
+    if (COMPILER) registerCompiler(COMPILER);
+    if (DRY_RUN) require('../lib/rewriters/mongoDBRewriters');
+  
+    const Store = require(STORE_CLASS_PATH[0] === '.'
+      ? path.join(process.cwd(), STORE_CLASS_PATH)
+      : STORE_CLASS_PATH);
+    const store = new Store(STATE_FILE, DRY_RUN)
+
+    if (program.init && typeof store.init === 'function') await store.init();
+
+    const set = await migrate.load(
+      {
+        config: CONFIG,
+        stateStore: store,
+        migrationsDirectory: MIGRATIONS_DIRECTORY,
+        filterFunction: minimatch.filter(program.matches),
+        ignoreMissing: program.force,
+      }
+    );
+    set.on('warning', msg => log('warning', msg));
+
+    set.on('migration', (migration, direction) => log(direction, migration.title));
+
+    if (program.clean) {
+      await set.down();
+      await set.up();
+    } else {
+      await set.up(program.args[0]);
+    }
+    log('migration', 'complete');
+    process.exit(0);
+  } catch (e) {
+    log.error('error', e);
+    process.exit(1);
+  }
+})();

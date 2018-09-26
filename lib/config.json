@@ -1,0 +1,11 @@
+{
+  "mongodb": {
+    "connectionUrl": "mongodb://localhost:27017"
+  },
+  "stateFile": ".migrate",
+  "dryRun": false,
+  "migrationsDirectory": "migrations",
+  "storeClassPath": "../stores/FileStore.js",
+  "templateFactoryPath": "../factories/TemplateFactory.js",
+  "templateFilePath": "../template.js"
+}

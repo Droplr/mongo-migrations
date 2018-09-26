@@ -1,0 +1,13 @@
+node_modules
+*.swo
+*.swp
+.DS_Store
+npm-debug.log
+.eslintcache
+.nyc_output
+*.log
+build
+.vscode
+.coverage-cache
+coverage
+report
