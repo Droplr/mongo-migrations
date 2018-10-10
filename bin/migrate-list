@@ -18,6 +18,7 @@ program
   .option('-c, --chdir <dir>', 'Change the working directory', process.cwd())
   .option('-f, --state-file <path>', 'Set path to state file')
   .option('-s, --store <store>', 'Set the migrations store')
+  .option('--mongo-store', 'Enforce mongo store')
   .option('-d, --date-format [format]', 'Set a date format to use', 'yyyy-mm-dd')
   .option('--migrations-dir <dir>', 'Change the migrations directory name')
   .option('--matches <glob>', 'A glob pattern to filter migration files', '*')
@@ -49,13 +50,23 @@ program
     const STATE_FILE = program.stateFile || CONFIG.stateFile;
     const DATE_FORMAT = program.dateFormat || CONFIG.dateFormat;
     const STORE_CLASS_PATH = program.store || CONFIG.storeClassPath;
+    const MONGO_STORE = program.mongoStore || CONFIG.useMongoStore;
 
     if (COMPILER) registerCompiler(COMPILER);
 
-    const Store = require(STORE_CLASS_PATH[0] === '.'
-      ? path.join(process.cwd(), STORE_CLASS_PATH)
-      : STORE_CLASS_PATH);
-    const store = new Store(STATE_FILE);
+    let Store;
+    let store;
+    if (MONGO_STORE) {
+      Store = require('../lib/stores/MongoStore');
+      store = new Store(CONFIG.mongoStore);
+      await store.init();
+    } else {
+      Store = require(STORE_CLASS_PATH[0] === '.'
+        ? path.join(process.cwd(), STORE_CLASS_PATH)
+        : STORE_CLASS_PATH);
+      store = new Store(STATE_FILE);
+    }
+
     const set = await migrate.load({
       config: CONFIG,
       stateStore: store,

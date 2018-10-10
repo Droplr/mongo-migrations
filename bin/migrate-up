@@ -17,6 +17,7 @@ program
   .option('-c, --chdir <dir>', 'Change the working directory', process.cwd())
   .option('-f, --state-file <path>', 'Set path to state file')
   .option('-s, --store <store>', 'Set the migrations store')
+  .option('--mongo-store', 'Enforce mongo store')
   .option('--clean', 'Tears down the migration state before running up')
   .option('-F, --force', 'Force through the command, ignoring warnings')
   .option('--init', 'Runs init for the store')
@@ -56,14 +57,23 @@ program
     const MIGRATIONS_DIRECTORY = program.migrationsDir || CONFIG.migrationsDirectory;
     const STATE_FILE = program.stateFile || CONFIG.stateFile;
     const STORE_CLASS_PATH = program.store || CONFIG.storeClassPath;
+    const MONGO_STORE = program.mongoStore || CONFIG.useMongoStore;
     
     if (COMPILER) registerCompiler(COMPILER);
     if (DRY_RUN) require('../lib/rewriters/mongoDBRewriters');
   
-    const Store = require(STORE_CLASS_PATH[0] === '.'
-      ? path.join(process.cwd(), STORE_CLASS_PATH)
-      : STORE_CLASS_PATH);
-    const store = new Store(STATE_FILE, DRY_RUN)
+    let Store;
+    let store;
+    if (MONGO_STORE) {
+      Store = require('../lib/stores/MongoStore');
+      store = new Store(CONFIG.mongoStore, DRY_RUN);
+      program.init = true;
+    } else {
+      Store = require(STORE_CLASS_PATH[0] === '.'
+        ? path.join(process.cwd(), STORE_CLASS_PATH)
+        : STORE_CLASS_PATH);
+      store = new Store(STATE_FILE, DRY_RUN);
+    }
 
     if (program.init && typeof store.init === 'function') await store.init();
 
