@@ -5,49 +5,37 @@ const assert = require('assert')
 const FileStore = require('../lib/stores/FileStore')
 
 const BASE = path.join(__dirname, 'fixtures', 'file-store')
-const MODERN_STORE_FILE = path.join(BASE, 'good-store')
-const OLD_STORE_FILE = path.join(BASE, 'old-store')
+const GOOD_STORE_FILE = path.join(BASE, 'good-store')
+const SAVE_STORE_FILE = path.join(BASE, 'save-store');
 const BAD_STORE_FILE = path.join(BASE, 'bad-store')
-const INVALID_STORE_FILE = path.join(BASE, 'invalid-store')
 
 describe('FileStore tests', () => {
-  it('should load store file', async () => {
-    const fileStore = new FileStore(MODERN_STORE_FILE);
-    
-    const store = await fileStore.load();
-    assert.equal(store.lastRun, '1480449051248-farnsworth.js');
-    assert.equal(store.migrations.length, 2);
-  })
+  describe('save()', () => {
+    it('should return without save if dryRun is true', async () => {
+      const fileStore = new FileStore(SAVE_STORE_FILE, true);
 
-  it('should convert pre-v1 store file format', async () => {
-    const fileStore = new FileStore(OLD_STORE_FILE);
-    const store = await fileStore.load();
-    assert.equal(store.lastRun, '1480449051248-farnsworth.js');
-    assert.equal(store.migrations.length, 2);
-
-    store.migrations.forEach((migration) => {
-      assert.equal(typeof migration.title, 'string');
-      assert.equal(typeof migration.timestamp, 'number');
+      await fileStore.save();
+      const store = await fileStore.load();
+      assert.deepEqual(store, {});
     });
-  })
+  });
+  describe('load()', () => {
+    it('should load store file', async () => {
+      const fileStore = new FileStore(GOOD_STORE_FILE);
 
-  it('should error with invalid store file format', async () => {
-    const fileStore = new FileStore(BAD_STORE_FILE);
-    try {
       const store = await fileStore.load();
-      throw new Error('should fail');
-    } catch (e) {
-      assert.equal(e.message, 'Invalid store file');
-    }
-  })
+      assert.equal(store.lastRun, '1480449051248-farnsworth.js');
+      assert.equal(store.migrations.length, 2);
+    });
 
-  it('should error with invalid pos', async () => {
-    const fileStore = new FileStore(INVALID_STORE_FILE);
-    try {
-      const store = await fileStore.load();
-      throw new Error('should fail');
-    } catch (e) {
-      assert.equal(e.message, 'Store file contains invalid pos property');
-    }
-  })
-})
+    it('should error with invalid store file format', async () => {
+      const fileStore = new FileStore(BAD_STORE_FILE);
+      try {
+        const store = await fileStore.load();
+        throw new Error('should fail');
+      } catch (e) {
+        assert.equal(e.message, 'Invalid store file');
+      }
+    });
+  });
+});
