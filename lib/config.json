@@ -7,5 +7,12 @@
   "migrationsDirectory": "migrations",
   "storeClassPath": "../stores/FileStore.js",
   "templateFactoryPath": "../factories/TemplateFactory.js",
-  "templateFilePath": "../template.js"
+  "templateFilePath": "../template.js",
+  "useMongoStore": false,
+  "mongoStore": {
+    "connectionUrl": "mongodb://localhost:27017",
+    "database": "test",
+    "collection": "migrations",
+    "idField": "test-migrations"
+  }
 }
