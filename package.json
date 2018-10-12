@@ -1,6 +1,6 @@
 {
   "name": "mongo-migrations",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Asynchronous MongoDB migration framework for Node.js based on node-migrate",
   "keywords": [
     "migrate",

@@ -10,8 +10,6 @@ Asynchronous MongoDB migration framework for Node.js based on [node-migrate](htt
 ## Installation
 
 ```
-$ yarn add mongo-migrations
-OR
 $ npm install mongo-migrations
 ```
 
@@ -19,8 +17,6 @@ $ npm install mongo-migrations
 
 To run tests use
 ```
-$ yarn test
-OR
 $ npm run test
 ```
 
@@ -53,15 +49,17 @@ For help with the individual commands, see `mongo-migrations help [cmd]`.  Each 
 ```javascript
 const migrate = require('mongo-migrations')
 
-try {
-  const set = await migrate.load(
-    { stateStore: '.migrate' }
-  );
-  await set.up();
-  console.log('migrations successfully ran');
-} catch (e) {
-  console.error(e);
-}
+(async () => {
+  try {
+    const set = await migrate.load(
+      { stateStore: '.migrate' }
+    );
+    await set.up();
+    console.log('migrations successfully ran');
+  } catch (e) {
+    console.error(e);
+  }
+})();
 ```
 
 ## Configuration
@@ -80,13 +78,41 @@ and looks like follow:
   "migrationsDirectory": "migrations",
   "storeClassPath": "../stores/FileStore.js",
   "templateFactoryPath": "../factories/TemplateFactory.js",
-  "templateFilePath": "../template.js"
+  "templateFilePath": "../template.js",
+  "useMongoStore": false,
+  "mongoStore": {
+    "connectionUrl": "mongodb://localhost:27017",
+    "database": "test",
+    "collection": "migrations",
+    "idField": "test-migrations"
+  }
 }
 ```
 
 For all available options please refer to [Config.js](https://github.com/Droplr/mongo-migrations/master/lib/models/Config.js) file.
 
 Please remember, configuration file will be **overwritten** by any run command options.
+
+Since version 1.1.0 mongo-migrations allow usage of ENVs inside of `migrate-config.json` file.
+To indicate that specific field should be loaded from ENV use this structure:
+
+```json
+{
+  //...
+  "mongodb": {
+    "connectionUrl": "${MONGODB_CONNECTION_URL}"
+  }
+  //...
+}
+```
+
+**Note:** when specified field ENV will be not present `ConfigLoader` will log warning information and use default one
+
+**Note:** to load variables dynamically you can use `--env` switch for `dotenv`, [aws-env](https://github.com/Droplr/aws-env) or any other available library
+
+**Note:** due to `truthy/falsy` nature, ENV value with empty string will be considered as `false` for boolean fields
+
+**Note:** by default all config boolean fields are pointing to `false`
 
 ## Creating Migrations
 
@@ -260,6 +286,16 @@ List of currently stubbed methods:
   - `insertOne()`
   - `deleteOne()`
 
+## MongoDB State Storage
+
+Recently added `MongoStore` allows you to store migration state in MongoDB database instance.
+To use this store pass `--mongo-store` while running command (in which case `mongo-migrations` will load `MongoStore` default config) or
+set config option `useMongoStore` to `true`.
+
+**Note:** MongoStore creates distinct connection to MongoDB to allow state to be stored inside of any DB user wants.
+
+**Note:** inside of config file you can precise `db`, `collection` and `_id` field name which will be used while storing migration state. See Config for apropriate naming.
+
 ## Custom State Storage
 
 By default, `mongo-migrations` stores the state of the migrations which have been run in a file (`.migrate`).  But you
@@ -294,3 +330,15 @@ Migrates up to the specified `migrationName` or, if none is specified, to the la
 
 Migrates down to the specified `migrationName` or, if none is specified, to the
 first migration.
+
+## TODO
+- Reconstruct unit test
+  - Files should keep 1:1 structure with lib
+  - Reconstruct/rewrite test cases for specific modules
+  - Add missing unit test cases
+- Reconstruct integration test files
+- Add coverage checking tool
+- Add PR test runner
+- Introduce .eslint
+- Cleanup README to be more readable
+- Enhance CHANGELOG to include more information
